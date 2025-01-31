@@ -1,0 +1,1 @@
+export { default } from "file:///C:/Users/%E7%8E%8B%E5%9B%BD%E6%96%8C/OneDrive/UmaCharanameTest/node_modules/@nuxt/vite-builder/dist/runtime/vite-node.mjs"
