@@ -3,20 +3,34 @@
     <div v-if="!gameStarted" class="start-screen">
       <h2>{{ mode === 'normal' ? '马批浓度测试器' : '马批浓度测试器 - 声优吃模式' }}</h2>
       <div class="settings" v-if="!gameStarted">
-      <div class="checkbox-container">
-        <label class="ios-checkbox green">
-          <input type="checkbox" v-model="settings.allowContinueOnError" />
-          <div class="checkbox-wrapper">
-            <div class="checkbox-bg"></div>
-            <svg fill="none" viewBox="0 0 24 24" class="checkbox-icon">
-              <path stroke-linejoin="round" stroke-linecap="round" stroke-width="3" stroke="currentColor"
-                d="M4 12L10 18L20 6" class="check-path"></path>
-            </svg>
+        <div class="checkbox-container">
+          <div><label class="ios-checkbox green">
+              <input type="checkbox" v-model="settings.random30" />
+              <div class="checkbox-wrapper">
+                <div class="checkbox-bg"></div>
+                <svg fill="none" viewBox="0 0 24 24" class="checkbox-icon">
+                  <path stroke-linejoin="round" stroke-linecap="round" stroke-width="3" stroke="currentColor"
+                    d="M4 12L10 18L20 6" class="check-path"></path>
+                </svg>
+              </div>
+            </label>
+            随机30个角色
           </div>
-        </label>
-        高难度模式
+          <div>
+            <label class="ios-checkbox green">
+              <input type="checkbox" v-model="settings.allowContinueOnError" />
+              <div class="checkbox-wrapper">
+                <div class="checkbox-bg"></div>
+                <svg fill="none" viewBox="0 0 24 24" class="checkbox-icon">
+                  <path stroke-linejoin="round" stroke-linecap="round" stroke-width="3" stroke="currentColor"
+                    d="M4 12L10 18L20 6" class="check-path"></path>
+                </svg>
+              </div>
+            </label>
+            不校验答案
+          </div>
+        </div>
       </div>
-    </div>
       <button @click="startGame">开始挑战</button>
     </div>
 
@@ -37,7 +51,7 @@
                       </picture>
                     </div>
                     <div class="dt-bg">
-                      <p class="font-weight-bold">{{ mode === 'normal' ? 'umamusume' : currentCharacter.names.en }}</p>
+                      <p class="font-weight-bold">{{ mode === 'normal' ? 'Umamusume' : currentCharacter.names.en }}</p>
                     </div>
                   </dt>
                   <dd class="charaDd">
@@ -156,6 +170,11 @@ export default {
       if (this.characters.length === 0) return
 
       this.shuffleCharacters()
+
+      if (this.settings.random30) {
+        this.characters = this.characters.slice(0, 30)
+      }
+
       this.gameStarted = true
       this.displayTime = true
       this.startTime = Date.now()

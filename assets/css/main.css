@@ -161,8 +161,10 @@ button:hover {
 }
 
 .checkbox-container {
-    display: flex;
-    width: 20vw;
+    text-align: center;
+    display: grid;
+    vertical-align: middle;
+    max-width: 300px;
     margin: auto;
     gap: 20px;
     padding: 20px;
