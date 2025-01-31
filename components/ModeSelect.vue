@@ -1,7 +1,7 @@
 <template>
   <div class="mode-select">
     <div class="buttons">
-      <nuxt-link to="/game?mode=normal" class="mode">角色模式</nuxt-link>
+      <nuxt-link to="/game?mode=normal" class="mode">角色名模式</nuxt-link>
       <nuxt-link to="/game?mode=seiyuu" class="mode">声优吃模式</nuxt-link>
     </div>
   </div>

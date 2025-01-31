@@ -38,6 +38,16 @@
 
       <TimerDisplay v-if="gameStarted & displayTime" :startTime="startTime" />
 
+      <div v-if="gameStarted && currentCharacter" class="progress-container">
+        <div class="progress-text">{{ progressText }}</div>
+        <div class="progress-bar">
+          <div class="progress-fill" :style="{
+            width: progressPercentage + '%',
+            backgroundColor: subColor
+          }"></div>
+        </div>
+      </div>
+
       <transition name="fade" mode="out-in">
         <div v-if="currentCharacter" key="game" class="character-card">
           <li class="charaContainer" style="transition-delay: 0s;"><a data-v-2ed22295="" data-v-edf74022=""
@@ -161,6 +171,12 @@ export default {
     },
     subColor() {
       return this.currentCharacter.subColor;
+    },
+    progressPercentage() {
+      return ((this.currentIndex + 1) / this.characters.length) * 100
+    },
+    progressText() {
+      return `${this.currentIndex + 1}/${this.characters.length}`
     }
   },
   methods: {
@@ -550,5 +566,47 @@ a dl:after {
   top: 0;
   width: 100%;
   z-index: 10;
+}
+
+.progress-container {
+  margin: 20px auto;
+  max-width: 600px;
+  padding: 0 15px;
+}
+
+.progress-bar {
+  height: 12px;
+  background-color: #f0f0f0;
+  border-radius: 6px;
+  overflow: hidden;
+  position: relative;
+}
+
+.progress-fill {
+  height: 100%;
+  border-radius: 6px;
+  transition: width 0.3s ease, background-color 0.3s ease;
+}
+
+.progress-text {
+  text-align: center;
+  margin-bottom: 8px;
+  font-size: 1.1em;
+  color: var(--color-text-gray);
+  font-weight: bold;
+}
+
+@media (max-width: 768px) {
+  .progress-container {
+    margin: 15px 10px;
+  }
+  
+  .progress-bar {
+    height: 10px;
+  }
+  
+  .progress-text {
+    font-size: 0.9em;
+  }
 }
 </style>
