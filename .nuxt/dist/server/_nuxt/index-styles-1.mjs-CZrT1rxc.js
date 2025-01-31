@@ -1,5 +1,0 @@
-const index_vue_vue_type_style_index_0_scoped_7b7af8da_lang = ".container[data-v-7b7af8da]{margin:2rem auto;max-width:800px;text-align:center}.link-container[data-v-7b7af8da]{bottom:5px;position:fixed;text-align:center;width:100vw}.link-btn[data-v-7b7af8da]{background:#e3edf7;border:1px solid transparent;border-radius:10px;box-shadow:6px 6px 10px -1px #00000026,-6px -6px 10px -1px #ffffffb3;cursor:pointer;display:inline-block;height:auto;margin:5px;padding:1.4em;place-items:center;transition:transform .5s;width:auto}.link-btn[data-v-7b7af8da]:hover{border:1px solid rgba(0,0,0,.1);box-shadow:inset 4px 4px 6px -1px #0003,inset -4px -4px 6px -1px #ffffffb3,-.5px -.5px #fff,.5px .5px #00000026,0 12px 10px -10px #0000000d;transform:translateY(.5em)}.link-btn svg[data-v-7b7af8da]{transition:transform .5s}.link-btn:hover svg[data-v-7b7af8da]{transform:scale(.9);fill:#333}";
-export {
-  index_vue_vue_type_style_index_0_scoped_7b7af8da_lang as default
-};
-//# sourceMappingURL=index-styles-1.mjs-CZrT1rxc.js.map
