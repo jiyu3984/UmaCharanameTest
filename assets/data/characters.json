@@ -720,7 +720,7 @@
             "aliases": [
                 "咲咲木瞳"
             ],
-            "en": "Sakusaki Hitomi"
+            "en": "Sasaki Hitomi"
         },
         "mainColor": "#3865A1",
         "subColor": "#78D5E1"
@@ -874,7 +874,7 @@
             "aliases": [
                 "香坂沙希"
             ],
-            "en": "Kousaka Saki"
+            "en": "Kosaka Saki"
         },
         "mainColor": "#245099",
         "subColor": "#E63C5C"
@@ -1131,7 +1131,8 @@
             "jp": "ハルウララ",
             "zh": "春乌菈菈",
             "aliases": [
-                "春丽"
+                "春丽",
+                "春乌拉拉"
             ],
             "en": "Haru Urara"
         },
@@ -2110,9 +2111,9 @@
         },
         "seiyuu": {
             "jp": "河野ひより",
-            "zh": "河野日向",
+            "zh": "河野日和",
             "aliases": [
-                "河野日向"
+                "河野日和"
             ],
             "en": "Kono Hiyori"
         },
