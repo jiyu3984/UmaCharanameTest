@@ -4,9 +4,9 @@
       <h2>{{ mode === 'normal' ? '马批浓度测试器' : '马批浓度测试器 - 声优吃模式' }}</h2>
       <div class="settings" v-if="!gameStarted">
         <div class="checkbox-container">
-          <div :class="{ disabled: settings.hardMode }">
+          <div>
             <label class="ios-checkbox green">
-              <input type="checkbox" v-model="settings.random30" :disabled="settings.hardMode" />
+              <input type="checkbox" v-model="settings.random30" />
               <div class="checkbox-wrapper">
                 <div class="checkbox-bg"></div>
                 <svg fill="none" viewBox="0 0 24 24" class="checkbox-icon">
@@ -452,8 +452,8 @@ export default {
 
     getCorrectAnswer() {
       return this.mode === 'normal'
-        ? `${this.currentCharacter.names.zh} (${this.currentCharacter.names.jp})`
-        : `${this.currentCharacter.seiyuu.zh} (${this.currentCharacter.seiyuu.jp})`
+        ? `${this.currentCharacter.names.zh} (${this.currentCharacter.names.jp}/${this.currentCharacter.names.en})`
+        : `${this.currentCharacter.seiyuu.zh} (${this.currentCharacter.seiyuu.jp}/${this.currentCharacter.seiyuu.en})`
     },
 
     getValidAnswers() {

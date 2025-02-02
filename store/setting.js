@@ -11,7 +11,6 @@ export const useSettingsStore = defineStore('settings', {
     setHardMode(value) {
       this.hardMode = value
       if (value) {
-        this.random30 = true
         this.allowContinueOnError = true
       }
     },
