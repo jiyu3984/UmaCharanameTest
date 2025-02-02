@@ -315,11 +315,13 @@ export default {
       this.nextCharacter()
     },
     preloadNextImage() {
-      const nextIndex = this.currentIndex + 1
-      if (nextIndex < this.characters.length) {
-        const nextCharacter = this.characters[nextIndex]
-        const img = new Image()
-        img.src = this.getImageUrl(nextCharacter.image)
+      const startIndex = this.currentIndex + 1
+      const endIndex = Math.min(startIndex + 10, this.characters.length)
+
+      for (let i = startIndex; i < endIndex; i++) {
+        const character = this.characters[i];
+        const img = new Image();
+        img.src = this.getImageUrl(character.image)
       }
     }
   }
