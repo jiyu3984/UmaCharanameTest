@@ -4,8 +4,9 @@
       <h2>{{ mode === 'normal' ? '马批浓度测试器' : '马批浓度测试器 - 声优吃模式' }}</h2>
       <div class="settings" v-if="!gameStarted">
         <div class="checkbox-container">
-          <div><label class="ios-checkbox green">
-              <input type="checkbox" v-model="settings.random30" />
+          <div :class="{ disabled: settings.hardMode }">
+            <label class="ios-checkbox green">
+              <input type="checkbox" v-model="settings.random30" :disabled="settings.hardMode" />
               <div class="checkbox-wrapper">
                 <div class="checkbox-bg"></div>
                 <svg fill="none" viewBox="0 0 24 24" class="checkbox-icon">
@@ -16,9 +17,9 @@
             </label>
             随机30个角色
           </div>
-          <div>
+          <div :class="{ disabled: settings.hardMode }">
             <label class="ios-checkbox green">
-              <input type="checkbox" v-model="settings.allowContinueOnError" />
+              <input type="checkbox" v-model="settings.allowContinueOnError" :disabled="settings.hardMode" />
               <div class="checkbox-wrapper">
                 <div class="checkbox-bg"></div>
                 <svg fill="none" viewBox="0 0 24 24" class="checkbox-icon">
@@ -29,6 +30,19 @@
             </label>
             不校验答案
           </div>
+          <div>
+            <label class="ios-checkbox green">
+              <input type="checkbox" v-model="settings.hardMode" />
+              <div class="checkbox-wrapper">
+                <div class="checkbox-bg"></div>
+                <svg fill="none" viewBox="0 0 24 24" class="checkbox-icon">
+                  <path stroke-linejoin="round" stroke-linecap="round" stroke-width="3" stroke="currentColor"
+                    d="M4 12L10 18L20 6" class="check-path"></path>
+                </svg>
+              </div>
+            </label>
+            高难度模式
+          </div>
         </div>
       </div>
       <button @click="startGame">开始挑战</button>
@@ -36,7 +50,7 @@
 
     <template v-else>
 
-      <TimerDisplay v-if="gameStarted & displayTime" :startTime="startTime" />
+      <TimerDisplay v-if="gameStarted & displayTime & !settings.hardMode" :startTime="startTime" />
 
       <div v-if="gameStarted && currentCharacter" class="progress-container">
         <div class="progress-text">{{ progressText }}</div>
@@ -57,11 +71,12 @@
                   <dt class="charaDt">
                     <div class="dt-img">
                       <picture class="img-loaded">
-                        <img :src="getImageUrl(currentCharacter.image)" width="100%">
+                        <img :src="getImageUrl(currentCharacter.image)" :style="hardModeImageStyle" width="100%">
                       </picture>
                     </div>
                     <div class="dt-bg">
-                      <p class="font-weight-bold">{{ mode === 'normal' ? 'Umamusume' : currentCharacter.names.en }}</p>
+                      <p class="font-weight-bold">{{ settings.hardMode ? 'Umamusume' : mode === 'normal' ? 'Umamusume' :
+                        currentCharacter.names.en }}</p>
                     </div>
                   </dt>
                   <dd class="charaDd">
@@ -75,7 +90,9 @@
                       </div>
                     </div>
                     <div v-if="mode === 'seiyuu'">
-                      {{ currentCharacter.names.zh }}
+                      <span class="masked-name">
+                        {{ settings.hardMode ? maskName(currentCharacter.names.zh) : currentCharacter.names.zh }}
+                      </span>
                     </div>
                     </p>
                     <div class="cv" v-if="mode === 'seiyuu'">
@@ -107,10 +124,23 @@
           <div v-if="showingHint" class="hint-popup" :class="{ show: showingHint }">
             {{ hintText }}
           </div>
+          <div v-if="settings.hardMode && currentCharacter" class="hard-mode-timer">
+            <div class="timer-circle">
+              <svg width="40" height="40">
+                <circle cx="20" cy="20" r="18" class="timer-bg" />
+                <circle cx="20" cy="20" r="18" :style="{
+                  strokeDasharray: `${2 * Math.PI * 18}`,
+                  strokeDashoffset: `${2 * Math.PI * 18 * (1 - timeLeft / 10)}`,
+                  stroke: mainColor
+                }" class="timer-progress" />
+              </svg>
+              <div class="timer-text">{{ timeLeft }}</div>
+            </div>
+          </div>
         </div>
 
         <div v-else class="result-screen">
-          <h3>挑战完成！</h3>
+          <h3>{{ settings.hardMode ? '高难度模式' : '' }}挑战完成！</h3>
           <p>用时：{{ formattedTime }}</p>
           <p>正确率：{{ accuracy }}%</p>
           <p>正确数：{{ correctCount }}/{{ this.characters.length }}</p>
@@ -159,6 +189,7 @@ import { useGameStore, useErrorStore } from '~/store/index.js'
 import { formatTime, formatDate } from '@/utils/helpers'
 import { useHistoryStore } from '@/store/history.js'
 import { useSettingsStore } from '@/store/setting.js'
+import { useDebounceFn } from '@vueuse/core'
 
 export default {
   setup() {
@@ -190,6 +221,9 @@ export default {
       isError: false,
       showingHint: false,
       hintText: '',
+      timeoutId: null,
+      timeLeft: 10,
+      timerInterval: null
     }
   },
   computed: {
@@ -206,16 +240,22 @@ export default {
       return this.correctCount
     },
     mainColor() {
-      return this.currentCharacter.mainColor
+      return this.applyOpacity(this.currentCharacter.mainColor, this.settings.hardMode ? 0.5 : 1)
     },
     subColor() {
-      return this.currentCharacter.subColor
+      return this.applyOpacity(this.currentCharacter.subColor, this.settings.hardMode ? 0.5 : 1)
     },
     progressPercentage() {
       return ((this.currentIndex + 1) / this.characters.length) * 100
     },
     progressText() {
       return `${this.currentIndex + 1}/${this.characters.length}`
+    },
+    hardModeImageStyle() {
+      return {
+        filter: this.settings.hardMode ? 'blur(14px) contrast(350%)' : 'none',
+        opacity: 1
+      }
     }
   },
   methods: {
@@ -236,7 +276,11 @@ export default {
       this.startTime = Date.now()
     },
     getImageUrl(imageName) {
-      return new URL(`/assets/images/characters/${imageName}`, import.meta.url).href
+      if (!this.settings.hardMode) {
+        return new URL(`/assets/images/characters/syoubufuku/${imageName}`, import.meta.url).href
+      } else {
+        return new URL(`/assets/images/characters/seifuku/${imageName}`, import.meta.url).href
+      }
     },
     shuffleCharacters() {
       for (let i = this.characters.length - 1; i > 0; i--) {
@@ -245,38 +289,19 @@ export default {
             [this.characters[j], this.characters[i]]
       }
     },
-    checkAnswer() {
-      const target = this.mode === 'normal'
-        ? this.currentCharacter.names
-        : this.currentCharacter.seiyuu
+    checkAnswer: useDebounceFn(function () {
+      if (this.settings.hardMode && this.timeLeft <= 0) return
 
-      const validAnswers = [
-        target.jp,
-        target.zh,
-        target.en,
-        ...(target.aliases || []),
-      ].map(str => str.toLowerCase().trim())
-
+      const validAnswers = this.getValidAnswers()
       const userAnswer = this.userInput.trim()
 
-      if (validAnswers.includes(this.userInput.toLowerCase().trim())) {
+      if (validAnswers.includes(userAnswer.toLowerCase())) {
         this.correctCount++
         this.nextCharacter()
       } else {
-
-        this.errorStore.addError({
-          userAnswer,
-          correctAnswer: this.mode === 'normal' ?
-            `${this.currentCharacter.names.zh} (${this.currentCharacter.names.jp})` :
-            `${this.currentCharacter.seiyuu.zh} (${this.currentCharacter.seiyuu.jp})`,
-          image: this.currentCharacter.image,
-          characterName: this.currentCharacter.names.zh,
-          mode: this.mode,
-          skipped: false
-        })
-        this.handleError()
+        this.handleWrongAnswer(userAnswer)
       }
-    },
+    }, 300),
     handleError() {
       if (this.settings.allowContinueOnError) {
         this.nextCharacter()
@@ -286,6 +311,7 @@ export default {
       }
     },
     nextCharacter() {
+      clearInterval(this.timerInterval)
       this.showingHint = false
       this.isHintDisabled = false
 
@@ -293,6 +319,7 @@ export default {
         this.currentIndex++
         this.userInput = ''
         this.preloadNextImage()
+        this.startTimer()
       } else {
         this.endGame()
       }
@@ -300,8 +327,12 @@ export default {
     endGame() {
       this.displayTime = false
       this.totalTime = Date.now() - this.startTime
+      this.currentCharacter = null
 
       this.currentIndex = this.characters.length
+
+      clearInterval(this.timerInterval)
+      this.timeLeft = 0
 
       const gameStore = useGameStore()
       gameStore.addHistory({
@@ -371,6 +402,97 @@ export default {
         const character = this.characters[i];
         const img = new Image();
         img.src = this.getImageUrl(character.image)
+      }
+    },
+    handleHardModeChange() {
+      if (this.settings.hardMode) {
+        this.settings.random30 = true
+        this.settings.allowContinueOnError = true
+      }
+    },
+
+    applyOpacity(hex, opacity) {
+      if (!hex) return ''
+      let r = 0, g = 0, b = 0
+      if (hex.length === 4) {
+        r = parseInt(hex[1] + hex[1], 16)
+        g = parseInt(hex[2] + hex[2], 16)
+        b = parseInt(hex[3] + hex[3], 16)
+      } else if (hex.length === 7) {
+        r = parseInt(hex[1] + hex[2], 16)
+        g = parseInt(hex[3] + hex[4], 16)
+        b = parseInt(hex[5] + hex[6], 16)
+      }
+      return `rgba(${r},${g},${b},${opacity})`
+    },
+
+    startTimer() {
+      if (!this.settings.hardMode) return
+
+      this.timeLeft = 10
+      this.timerInterval = setInterval(() => {
+        this.timeLeft--
+        if (this.timeLeft <= 0) {
+          this.handleTimeout()
+        }
+      }, 1000)
+    },
+
+    handleTimeout() {
+      this.errorStore.addError({
+        userAnswer: '（超时）',
+        correctAnswer: this.getCorrectAnswer(),
+        image: this.currentCharacter.image,
+        characterName: this.currentCharacter.names.zh,
+        mode: this.mode,
+        skipped: false
+      })
+      this.nextCharacter()
+    },
+
+    getCorrectAnswer() {
+      return this.mode === 'normal'
+        ? `${this.currentCharacter.names.zh} (${this.currentCharacter.names.jp})`
+        : `${this.currentCharacter.seiyuu.zh} (${this.currentCharacter.seiyuu.jp})`
+    },
+
+    getValidAnswers() {
+      const target = this.mode === 'normal'
+        ? this.currentCharacter.names
+        : this.currentCharacter.seiyuu
+
+      return [
+        target.jp,
+        target.zh,
+        target.en,
+        ...(target.aliases || []),
+      ].map(str => str.toLowerCase().trim())
+    },
+
+    handleWrongAnswer(userAnswer) {
+      this.errorStore.addError({
+        userAnswer,
+        correctAnswer: this.getCorrectAnswer(),
+        image: this.currentCharacter.image,
+        characterName: this.currentCharacter.names.zh,
+        mode: this.mode,
+        skipped: false
+      })
+
+      if (this.settings.allowContinueOnError) {
+        this.nextCharacter()
+      } else {
+        this.isError = true
+        setTimeout(() => this.isError = false, 1000)
+      }
+    }
+  },
+
+  watch: {
+    'settings.hardMode'(newVal) {
+      if (newVal) {
+        this.settings.random30 = true
+        this.settings.allowContinueOnError = true
       }
     }
   }
@@ -846,5 +968,54 @@ a dl:after {
   .error-image img {
     width: 50px;
   }
+}
+
+.hard-mode-timer {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  z-index: 100;
+}
+
+.timer-circle {
+  right: 20px;
+  top: 20px;
+  position: fixed;
+  width: 40px;
+  height: 40px;
+}
+
+.timer-bg {
+  fill: none;
+  stroke: #eee;
+  stroke-width: 2;
+}
+
+.timer-progress {
+  fill: none;
+  stroke-width: 2;
+  stroke-linecap: round;
+  transform: rotate(-90deg);
+  transform-origin: 50% 50%;
+  transition: stroke-dashoffset 1s linear;
+}
+
+.timer-text {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  font-weight: bold;
+  color: var(--color-text-gray);
+}
+
+.disabled {
+  opacity: 0.6;
+  pointer-events: none;
+}
+
+.cv .masked-name {
+  letter-spacing: 2px;
+  filter: blur(1px);
 }
 </style>
