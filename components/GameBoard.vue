@@ -93,13 +93,26 @@
               </div>
             </a>
           </li>
-          <button @click="checkAnswer" class="submit-button">提交</button>
+          <div class="button-container" v-bind:style="{ display: settings.allowContinueOnError ? 'block' : 'flex' }">
+            <button v-if="!settings.allowContinueOnError" @click="skipCharacter" class="skip-button">跳过</button>
+            <button @click="checkAnswer" class="submit-button">提交</button>
+          </div>
+
+          <div v-if="!settings.allowContinueOnError" class="hint-button" @click="showHint" :disabled="isHintDisabled">
+            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24">
+              <path fill="currentColor"
+                d="M10.6 16q0-2.025.363-2.912T12.5 11.15q1.025-.9 1.563-1.562t.537-1.513q0-1.025-.687-1.7T12 5.7q-1.275 0-1.937.775T9.125 8.05L6.55 6.95q.525-1.6 1.925-2.775T12 3q2.625 0 4.038 1.463t1.412 3.512q0 1.25-.537 2.138t-1.688 2.012Q14 13.3 13.738 13.913T13.475 16zm1.4 6q-.825 0-1.412-.587T10 20t.588-1.412T12 18t1.413.588T14 20t-.587 1.413T12 22" />
+            </svg>
+          </div>
+          <div v-if="showingHint" class="hint-popup" :class="{ show: showingHint }">
+            {{ hintText }}
+          </div>
         </div>
 
         <div v-else class="result-screen">
           <h3>挑战完成！</h3>
           <p>用时：{{ formattedTime }}</p>
-          <p v-if="this.settings.allowContinueOnError">正确率：{{ accuracy }}%</p>
+          <p>正确率：{{ accuracy }}%</p>
           <p>正确数：{{ correctCount }}/{{ this.characters.length }}</p>
           <div class="history-list">
             <h4>历史记录</h4>
@@ -150,7 +163,9 @@ export default {
       gameStarted: false,
       displayTime: true,
       correctCount: 0,
-      isError: false
+      isError: false,
+      showingHint: false,
+      hintText: '',
     }
   },
   computed: {
@@ -167,10 +182,10 @@ export default {
       return this.correctCount
     },
     mainColor() {
-      return this.currentCharacter.mainColor;
+      return this.currentCharacter.mainColor
     },
     subColor() {
-      return this.currentCharacter.subColor;
+      return this.currentCharacter.subColor
     },
     progressPercentage() {
       return ((this.currentIndex + 1) / this.characters.length) * 100
@@ -214,7 +229,7 @@ export default {
         target.jp,
         target.zh,
         target.en,
-        ...(target.aliases || [])
+        ...(target.aliases || []),
       ].map(str => str.toLowerCase().trim())
 
       if (validAnswers.includes(this.userInput.toLowerCase().trim())) {
@@ -233,9 +248,13 @@ export default {
       }
     },
     nextCharacter() {
+      this.showingHint = false
+      this.isHintDisabled = false
+
       if (this.currentIndex < this.characters.length - 1) {
         this.currentIndex++
         this.userInput = ''
+        this.preloadNextImage()
       } else {
         this.endGame()
       }
@@ -267,10 +286,46 @@ export default {
       this.currentIndex = 0
       this.userInput = ''
       this.correctCount = 0
+    },
+    showHint() {
+      if (this.isHintDisabled) return
+
+      const targetName = this.mode === 'normal'
+        ? this.currentCharacter.names
+        : this.currentCharacter.seiyuu
+
+      const nameToUse = targetName.zh
+
+      const randomChars = nameToUse.split('').sort(() => 0.5 - Math.random()).slice(0, 2).join('')
+
+      let hintText = ''
+      for (let i = 0; i < nameToUse.length; i++) {
+        if (randomChars.includes(nameToUse[i])) {
+          hintText += nameToUse[i]
+        } else {
+          hintText += ' _ '
+        }
+      }
+
+      this.hintText = hintText
+      this.showingHint = true
+      this.isHintDisabled = true
+    },
+    skipCharacter() {
+      this.nextCharacter()
+    },
+    preloadNextImage() {
+      const nextIndex = this.currentIndex + 1
+      if (nextIndex < this.characters.length) {
+        const nextCharacter = this.characters[nextIndex]
+        const img = new Image()
+        img.src = this.getImageUrl(nextCharacter.image)
+      }
     }
   }
 }
 </script>
+
 
 <style scoped>
 :root {
@@ -333,6 +388,10 @@ export default {
 
   a dl dd:before {
     width: .9333333333vh !important;
+  }
+
+  .rusult-screen {
+    width: 90vw !important;
   }
 }
 
@@ -600,13 +659,75 @@ a dl:after {
   .progress-container {
     margin: 15px 10px;
   }
-  
+
   .progress-bar {
     height: 10px;
   }
-  
+
   .progress-text {
     font-size: 0.9em;
   }
+}
+
+.hint-button {
+  position: fixed;
+  right: 20px;
+  top: 50%;
+  transform: translateY(-50%);
+  background: #f8fafc;
+  color: #505050;
+  font-size: 2rem;
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  cursor: pointer;
+  box-shadow:
+    0 4px 6px -1px rgba(0, 0, 0, 0.15),
+    0 2px 4px -2px rgba(0, 0, 0, 0.08);
+  z-index: 10;
+}
+
+.hint-popup.show {
+  opacity: 1;
+}
+
+.hint-popup {
+  position: fixed;
+  top: 10px;
+  left: 50%;
+  transform: translateX(-50%);
+  max-width: 300px;
+  margin: auto;
+  margin-bottom: 5px;
+  gap: 20px;
+  padding: 20px;
+  background: #f8fafc;
+  border-radius: 16px;
+  box-shadow:
+    0 4px 6px -1px rgba(0, 0, 0, 0.15),
+    0 2px 4px -2px rgba(0, 0, 0, 0.08);
+  opacity: 0;
+  transition: opacity 0.5s ease;
+  z-index: 100;
+}
+
+.button-container {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.skip-button {
+  margin-right: 10px;
+  background-color: white;
+  color: #8c83ff;
+}
+
+.submit-button {
+  background-color: #8c83ff;
+  color: white;
 }
 </style>
