@@ -23,3 +23,26 @@ export const useGameStore = defineStore('game', {
     }
   }
 })
+
+export const useErrorStore = defineStore('errors', {
+  state: () => ({
+    errors: []
+  }),
+  actions: {
+    addError(error) {
+      this.errors.push(error)
+    },
+    clearErrors() {
+      this.errors = []
+    },
+    addError(error) {
+      this.errors.push({
+        ...error,
+        skipped: error.skipped || false // 新增跳过状态
+      })
+    }
+  },
+  getters: {
+    errorCount: (state) => state.errors.length
+  }
+})

@@ -114,6 +114,29 @@
           <p>用时：{{ formattedTime }}</p>
           <p>正确率：{{ accuracy }}%</p>
           <p>正确数：{{ correctCount }}/{{ this.characters.length }}</p>
+
+          <div class="error-list" v-if="errorStore.errorCount > 0">
+            <h4>错误答案</h4>
+            <div v-for="(error, index) in errorStore.errors" :key="index" class="error-item"
+              :class="{ 'skipped': error.skipped }">
+              <div class="error-card">
+                <div class="error-image">
+                  <img :src="getImageUrl(error.image)" width="60">
+                </div>
+                <div class="error-info">
+                  <p v-if="error.mode === 'normal'">角色：{{ error.characterName }}</p>
+                  <p>
+                    你的答案：
+                    <span class="wrong-answer" :data-skipped="error.skipped">
+                      {{ error.skipped ? '（已跳过）' : (error.userAnswer || "（未填写）") }}
+                    </span>
+                  </p>
+                  <p>正确答案：<span class="correct-answer">{{ error.correctAnswer }}</span></p>
+                </div>
+              </div>
+            </div>
+          </div>
+
           <div class="history-list">
             <h4>历史记录</h4>
             <div v-for="(record, index) in history.records" :key="index" class="history-item">
@@ -132,7 +155,7 @@
 
 <script>
 import TimerDisplay from '~/components/TimerDisplay.vue'
-import { useGameStore } from '~/store/index.js'
+import { useGameStore, useErrorStore } from '~/store/index.js'
 import { formatTime, formatDate } from '@/utils/helpers'
 import { useHistoryStore } from '@/store/history.js'
 import { useSettingsStore } from '@/store/setting.js'
@@ -141,7 +164,8 @@ export default {
   setup() {
     const history = useHistoryStore()
     const settings = useSettingsStore()
-    return { history, settings }
+    const errorStore = useErrorStore()
+    return { history, settings, errorStore }
   },
   components: {
     TimerDisplay
@@ -208,6 +232,7 @@ export default {
 
       this.gameStarted = true
       this.displayTime = true
+      this.errorStore.clearErrors()
       this.startTime = Date.now()
     },
     getImageUrl(imageName) {
@@ -232,10 +257,23 @@ export default {
         ...(target.aliases || []),
       ].map(str => str.toLowerCase().trim())
 
+      const userAnswer = this.userInput.trim()
+
       if (validAnswers.includes(this.userInput.toLowerCase().trim())) {
         this.correctCount++
         this.nextCharacter()
       } else {
+
+        this.errorStore.addError({
+          userAnswer,
+          correctAnswer: this.mode === 'normal' ?
+            `${this.currentCharacter.names.zh} (${this.currentCharacter.names.jp})` :
+            `${this.currentCharacter.seiyuu.zh} (${this.currentCharacter.seiyuu.jp})`,
+          image: this.currentCharacter.image,
+          characterName: this.currentCharacter.names.zh,
+          mode: this.mode,
+          skipped: false
+        })
         this.handleError()
       }
     },
@@ -312,6 +350,17 @@ export default {
       this.isHintDisabled = true
     },
     skipCharacter() {
+      this.errorStore.addError({
+        userAnswer: '',
+        correctAnswer: this.mode === 'normal' ?
+          `${this.currentCharacter.names.zh} (${this.currentCharacter.names.jp})` :
+          `${this.currentCharacter.seiyuu.zh} (${this.currentCharacter.seiyuu.jp})`,
+        image: this.currentCharacter.image,
+        characterName: this.currentCharacter.names.zh,
+        mode: this.mode,
+        skipped: true
+      })
+
       this.nextCharacter()
     },
     preloadNextImage() {
@@ -731,5 +780,71 @@ a dl:after {
 .submit-button {
   background-color: #8c83ff;
   color: white;
+}
+
+.error-list {
+  margin-top: 2rem;
+  max-width: 600px;
+  margin-left: auto;
+  margin-right: auto;
+}
+
+.error-item {
+  background: #fff;
+  border-radius: 12px;
+  margin: 1rem 0;
+  padding: 1rem;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  border-left: 4px solid #ff4444;
+}
+
+.error-card {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+
+.error-image img {
+  border-radius: 8px;
+  border: 2px solid #eee;
+}
+
+.error-info p {
+  margin: 0.5rem 0;
+  font-size: 0.95rem;
+}
+
+.wrong-answer {
+  color: #ff4444;
+  text-decoration: line-through;
+}
+
+.correct-answer {
+  color: #00c851;
+  font-weight: bold;
+}
+
+.wrong-answer[data-skipped]::before {
+  color: #999;
+}
+
+.error-item.skipped {
+  background-color: #f8f9fa;
+  border-left: 4px solid #6c757d;
+}
+
+.error-item.skipped .wrong-answer {
+  color: #6c757d;
+}
+
+@media (max-width: 768px) {
+  .error-card {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .error-image img {
+    width: 50px;
+  }
 }
 </style>
