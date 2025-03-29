@@ -6,7 +6,7 @@ on:
   workflow_dispatch:
 
 permissions:
-  contents: read
+  contents: write  # 关键修改点
   pages: write
   id-token: write
 
@@ -45,23 +45,23 @@ jobs:
         uses: actions/configure-pages@v5
         with:
           static_site_generator: nuxt
-          enablement: true  # 关键修复点
+          enablement: true
 
       - name: Restore cache
         uses: actions/cache@v4
         with:
           path: |
-            dist
             .nuxt
-          key: ${{ runner.os }}-nuxt-build-${{ hashFiles('**/package.json') }}
+            node_modules
+          key: ${{ runner.os }}-nuxt-${{ hashFiles('**/package-lock.json') }}
           restore-keys: |
-            ${{ runner.os }}-nuxt-build-
+            ${{ runner.os }}-nuxt-
 
       - name: Install dependencies
         run: ${{ steps.detect-package-manager.outputs.manager }} ${{ steps.detect-package-manager.outputs.command }}
 
-      - name: Static HTML export with Nuxt
-        run: ${{ steps.detect-package-manager.outputs.manager }} run generate  # 修正生成命令
+      - name: Build with Nuxt
+        run: ${{ steps.detect-package-manager.outputs.manager }} run generate
 
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v3
